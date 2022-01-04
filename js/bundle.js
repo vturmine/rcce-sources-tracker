@@ -1,0 +1,709 @@
+// window.$ = window.jQuery = require('jquery');
+// helpers js
+let sourcesDataFiltered;
+let datatable;
+
+let regionsArr = ['All regions'];
+let dimensionsArr = [];
+
+function slugify(texte){
+    return texte.toLowerCase()
+             .replace(/[^\w ]+/g, '')
+             .replace(/ +/g, '-');
+}
+
+// 
+function generateRegionDropdown(){
+    var options = "";
+
+    for (let index = 0; index < regionsArr.length; index++) {
+        const element = regionsArr[index];
+        index == 0 ? options += '<option value="all" selected>' + element + '</option>'  : 
+            options += '<option value="' + element + '">' + element + '</option>';
+    }
+    $('#regionSelect').append(options);
+    $('#all').toggleClass('active');
+
+} //generateRegionDropdown
+
+function generateDimensionFilterSpan(){
+    var labels = "<label><strong>Filter by: <strong></label>";
+    for (let index = 0; index < dimensionsArr.length; index++) {
+        const item = dimensionsArr[index];
+        // if(item == "Structural factor" || item == "Social environment"){
+        //     labels += '<label><button type="button" class="btn btn-secondary filter" id="'+slugify(item)+'" value="'+item+'">'+item+'</button></label>';
+        // } else {
+        //     labels += '<label><button type="button" class="btn btn-secondary filter" id="'+slugify(item)+'" value="'+item+'">'+item+'</button></label>';
+        // }
+        labels += '<label><button type="button" class="btn btn-secondary filter" id="'+slugify(item)+'" value="'+item+'">'+item+'</button></label>';
+    }
+    $('.dimensionFilter').append(labels);
+}//generateDimensionFilterSpan
+
+
+// map js
+let countriesArr = [];
+let g, mapsvg, projection, width, height, zoom, path;
+let currentZoom = 1;
+let mapClicked = false;
+let countrySelectedFromMap = false;
+let mapFillColor = '#204669',//'#C2DACA',//'#2F9C67', 
+    mapInactive = '#fff',//'#DBDEE6',//'#f1f1ee',//'#C2C4C6',
+    mapActive = '#2F9C67',
+    hoverColor = '#2F9C67';//'#78B794';
+
+function initiateMap() {
+    width = $('#map').width();
+    height = 500;
+    var mapScale = width/7.8;
+    var mapCenter = [25, 25];
+
+    projection = d3.geoMercator()
+        .center(mapCenter)
+        .scale(mapScale)
+        .translate([width / 2, height / 1.9]);
+
+    path = d3.geoPath().projection(projection);
+
+    zoom = d3.zoom()
+        .scaleExtent([1, 8])
+        .on("zoom", zoomed);
+
+
+    mapsvg = d3.select('#map').append("svg")
+        .attr("width", width)
+        .attr("height", height)
+        .call(zoom)
+        .on("wheel.zoom", null)
+        .on("dblclick.zoom", null);
+    
+    mapsvg.append("rect")
+        .attr("width", "100%")
+        .attr("height", "100%")
+        // .attr("fill", "#99daea");
+        .attr("fill", "#ccd4d8");
+
+    //map tooltips
+    var maptip = d3.select('#map').append('div').attr('class', 'd3-tip map-tip hidden');
+
+    g = mapsvg.append("g").attr('id', 'countries')
+            .selectAll("path")
+            .data(geomData.features)
+            .enter()
+            .append("path")
+            .attr('d',path)
+            .attr('id', function(d){ 
+                return d.properties.ISO_A3; 
+            })
+            .attr('class', function(d){
+              var className = (countriesArr.includes(d.properties.NAME)) ? 'hasStudy' : 'inactive';
+              return className;
+            })
+            .attr('fill', function(d){
+              return countriesArr.includes(d.properties.NAME) ? mapFillColor : mapInactive ;
+            })
+            .attr('stroke-width', .2)
+            .attr('stroke', '#fff');
+
+    mapsvg.transition()
+    .duration(750)
+    .call(zoom.transform, d3.zoomIdentity);
+
+    // choroplethMap();
+
+    //zoom controls
+    d3.select("#zoom_in").on("click", function() {
+        zoom.scaleBy(mapsvg.transition().duration(500), 1.5);
+    }); 
+    d3.select("#zoom_out").on("click", function() {
+        zoom.scaleBy(mapsvg.transition().duration(500), 0.5);
+    });
+    
+    var tipPays = d3.select('#countries').selectAll('path') 
+    g.filter('.hasStudy')
+    .on("mousemove", function(d){ 
+        if ( !$(this).hasClass('clicked')) {
+            $(this).attr('fill', hoverColor);
+        }
+        if (!mapClicked) {
+            generateCountrytDetailPane(d.properties.NAME_LONG);
+        }
+        var mouse = d3.mouse(mapsvg.node()).map( function(d) { return parseInt(d); } );
+        maptip
+            .classed('hidden', false)
+            .attr('style', 'left:'+(mouse[0])+'px; top:'+(mouse[1]+25)+'px')
+            .html(d.properties.NAME_LONG);
+        
+    })
+    .on("mouseout", function(d) { 
+        if ( !$(this).hasClass('clicked')) {
+            $(this).attr('fill', mapFillColor);
+        }
+        if (!mapClicked) {
+            generateDefaultDetailPane();
+        }
+        maptip.classed('hidden', true);
+    })
+    .on("click", function(d){
+        mapClicked = true;
+        mapsvg.select('g').selectAll('.hasStudy').attr('fill', mapFillColor)
+
+        // if ( !$(this).hasClass('clicked')) {
+        //     $(this).attr('fill', hoverColor);
+        // }
+        $(this).attr('fill', hoverColor);
+        $(this).addClass('clicked');
+        var countryData = getDataTableDataFromMap(d.properties.NAME);
+        
+        updateDataTable(countryData);
+        generateOverviewclicked(d.properties.NAME);
+        $('.btn').removeClass('active');
+        $('#all').toggleClass('active');
+        
+    })
+
+} //initiateMap
+
+function showMapTooltip(d, maptip, text){
+var mouse = d3.mouse(mapsvg.node()).map( function(d) { return parseInt(d); } );
+maptip
+    .classed('hidden', false)
+    .attr('style', 'left:'+(mouse[0]+20)+'px;top:'+(mouse[1]+20)+'px')
+    .html(text)
+}
+
+function hideMapTooltip(maptip) {
+    maptip.classed('hidden', true) 
+}
+
+// zoom on buttons click
+function zoomed(){
+    const {transform} = d3.event;
+    currentZoom = transform.k;
+
+    if (!isNaN(transform.k)) {
+        g.attr("transform", transform);
+        g.attr("stroke-width", 1 / transform.k);
+
+    }
+}
+
+function clicked(event, d){
+    var offsetX = 50;//(isMobile) ? 0 : 50;
+    var offsetY = 25;//(isMobile) ? 0 : 25;
+    const [[x0, y0], [x1, y1]] = [[-20.75,-13.71],[31.5,27.87]];//path.bounds(d);
+    // d3.event.stopPropagation(event);
+    mapsvg.transition().duration(750).call(
+      zoom.transform,
+      d3.zoomIdentity
+        .translate(width / 2, height / 2)
+        .scale(Math.min(5, 0.9 / Math.max((x1 - x0) / width, (y1 - y0) / height)))
+        .translate(-(x0 + x1) / 2 + offsetX, -(y0 + y1) / 2 - offsetY),
+    //   d3.mouse(mapsvg.node())
+    );
+}
+
+// choropleth map
+function choroplethMap(){
+    mapsvg.selectAll('path').each( function(element, index) {
+        d3.select(this).transition().duration(500).attr('fill', function(d){
+            // var filtered = filteredCfmData.filter(pt => pt['ISO3']== d.properties.ISO_A3);
+            return '#fff';//getRightCountryCFMColor(filtered);
+        });
+    });
+
+}
+// table js
+
+// get dimensions formatted in tags
+function getFormattedDimension(item){
+    var items = [] ;
+    var arr = item.split(",");
+    var trimedArr = arr.map(x => x.trim());
+    for (let index = 0; index < trimedArr.length; index++) { //remove empty elements
+        if (trimedArr[index]) {
+            items.push(trimedArr[index]);
+        }
+    }
+    var formatedDims = "";
+    items.forEach(element => {
+        var className = slugify(element);
+        formatedDims +='<label class="alert tag-'+className+'">'+element+'</label>';
+    });
+    return formatedDims;
+}//getFormattedDimension
+
+function getDataTableData(data = sourcesDataFiltered){
+    var dt = [];
+    data.forEach(element => {
+        dt.push(
+            [element['source_id'],element['title'],
+            getFormattedDimension(element['dimension']), 
+            element['region'],
+            element['source_date'], 
+            element['organisation'],
+            '<a href="'+element['link']+'" target="blank"><i class="fa fa-external-link"></i></a>',
+            //hidden
+            element['details'],element['authors'],element['countries'],
+            element['variables'],element['source_comment'],element['methodology'],
+            element['target_pop'], element['sample_type'],element['quality_check']
+        ]);
+    });
+    return dt;
+} //getDataTableData
+
+// generate data table
+function generateDataTable(){
+    var dtData = getDataTableData();
+    datatable = $('#datatable').DataTable({
+        data : dtData,
+        "columns": [
+            {
+                "className": 'details-control',
+                "orderable": false,
+                "data": null,
+                "defaultContent": '<i class="fa fa-plus-circle"></i>',
+                "width": "1%"
+            },
+            {"width": "25%"},
+            {"width": "15%"},
+            {"width": "15%"},
+            {"width": "5%"},
+            {"width": "10%"},
+            {"width": "1%"}
+        ],
+        "columnDefs": [
+            {
+                "className": "dt-head-left",
+                "targets": "_all"
+            },
+            {
+                "defaultContent": "-",
+                "targets": "_all"
+            },
+            {"targets": [7], "visible": false},{"targets": [8], "visible": false},{"targets": [9], "visible": false},
+            {"targets": [10], "visible": false},{"targets": [11], "visible": false},{"targets": [12], "visible": false},
+            {"targets": [13], "visible": false},{"targets": [14], "visible": false},{"targets": [15], "visible": false},
+            { "searchable" : true, "targets": "_all"},
+            {"type": "myDate","targets": 4}
+        ],
+        "pageLength": 20,
+        "bLengthChange": false,
+        "pagingType": "simple_numbers",
+        "order":[[1, 'asc']],
+        "dom": "Blrtp",
+        "buttons": {
+            // "dom":{
+            //     "button":{
+            //         "tag": "button",
+            //         "className": "exportData"
+            //     }
+            // },
+            "buttons": [
+                {
+                    extend: 'excelHtml5',
+                    // text: "Download data",
+                    "className": "exportData",
+                    exportOptions:{
+                        columns: ':visible'
+                    }
+                }
+            ]
+        }
+    });
+
+    $('#datatable tbody').on('click', 'td.details-control', function(){
+        var tr = $(this).closest('tr');
+        var row = datatable.row(tr);
+        if(row.child.isShown()){
+            row.child.hide();
+            tr.removeClass('shown');
+            tr.css('background-color', '#fff');
+            tr.find('td.details-control i').removeClass('fa-minus-circle');
+            tr.find('td.details-control i').addClass('fa-plus-circle');
+        }
+        else {
+            row.child(format(row.data())).show();
+            tr.addClass('shown');
+            tr.css('background-color', '#f5f5f5');
+            $('#cfmDetails').parent('td').css('border-top', 0);
+            $('#cfmDetails').parent('td').css('padding', 0);
+            $('#cfmDetails').parent('td').css('background-color', '#f5f5f5');
+            tr.find('td.details-control i').removeClass('fa-plus-circle');
+            tr.find('td.details-control i').addClass('fa-minus-circle');
+    
+        }
+    });
+} //generateDataTable
+
+function format(arr){
+    filtered = sourcesData.filter(function(d){ return d['source_id']==arr[0]; });    
+    return '<table class="tabDetail" id="cfmDetails" >'+
+                '<tr>'+
+                    '<td>&nbsp;</td>'+
+                    '<td>&nbsp;</td>'+
+                    '<td>&nbsp;</td>'+'<td>&nbsp;</td>'+
+                    '<td>'+
+                        '<table class="tabDetail" >'+
+                            '<tr>'+
+                                '<th><strong>Geo</strong></th>'+
+                                '<td>Region</td>'+
+                                '<td>'+filtered[0]['region']+'</td>'+
+                            '</tr>'+
+                            '<tr>'+
+                                '<td>&nbsp;</td>'+
+                                '<td>Countries ('+filtered[0]['country_count']+')</td>'+
+                                '<td>'+filtered[0]['countries']+'</td>'+
+                            '</tr>'+
+                        
+                            '<tr>'+
+                                '<th><strong>Purpose</strong></th>'+
+                                '<td>Summary</td>'+
+                                '<td>'+filtered[0]['details']+'</td>'+
+                            '</tr>'+
+                            '<tr>'+
+                                '<td>&nbsp;</td>'+
+                                '<td>Indicators</td>'+
+                                '<td>'+filtered[0]['variables']+'</td>'+
+                            '</tr>'+
+                            '<tr>'+
+                                '<td>&nbsp;</td>'+
+                                '<td>Target</td>'+
+                                '<td>'+filtered[0]['target_pop']+'</td>'+
+                            '</tr>'+
+                            '<tr>'+
+                                '<th><strong>Method</strong></th>'+
+                                '<td>Survey</td>'+
+                                '<td>'+filtered[0]['methodology']+'</td>'+
+                            '</tr>'+
+                            '<tr>'+
+                                '<td>&nbsp;</td>'+
+                                '<td>Sample</td>'+
+                                '<td>'+filtered[0]['sample_type']+' - '+filtered[0]['sample_size']+' respondents</td>'+
+                            '</tr>'+
+                            '<tr>'+
+                                '<td>&nbsp;</td>'+
+                                '<td>Review</td>'+
+                                '<td>'+filtered[0]['quality_check']+'</td>'+
+                            '</tr>'+
+                            '<tr>'+
+                                '<td>&nbsp;</td>'+
+                                '<td>Comment</td>'+
+                                '<td>'+filtered[0]['source_comment']+'</td>'+
+                            '</tr>'+
+                            '<tr>'+
+                                // '<th rowspan="3"><strong>Source</strong></th>'+
+                                '<th><strong>Source</strong></th>'+
+                                '<td>Data Type</td>'+
+                                '<td>'+filtered[0]['access_type']+'</td>'+
+                            '</tr>'+
+                            '<tr>'+
+                                '<td>&nbsp;</td>'+
+                                '<td>Authors</td>'+
+                                '<td>'+filtered[0]['authors']+'</td>'+
+                            '</tr>'+
+                            '<tr>'+
+                                '<td>&nbsp;</td>'+
+                                '<td>Publication</td>'+
+                                // '<td><a href="'+filtered[0]['link']+'" target="blank"><i class="fa fa-download fa-sm"></i></a></td>'+
+                                '<td>'+filtered[0]['publication_channel']+'</td>'+
+                            '</tr>'+
+                        '</table>'+
+                    '</td>'+
+                    '<td>&nbsp;</td>'+
+                '</tr>'+
+            '</table>'
+}//format
+
+function updateDataTable(data = sourcesData){
+    var dt = getDataTableData(data);
+    $('#datatable').dataTable().fnClearTable();
+    $('#datatable').dataTable().fnAddData(dt);
+
+} //updateDataTable
+
+// search button
+$('#searchInput').keyup(function () {
+    datatable.search($('#searchInput').val()).draw();
+});
+
+var buttocks = document.getElementsByClassName("filter");
+for (var i = 0; i < buttocks.length; i++) {
+    buttocks[i].addEventListener('click', clickButton);   
+}
+
+function clickButton(){
+    $('.btn').removeClass('active');
+    var dimSelected = this.value;
+    var regionSelected = $('#regionSelect').val();
+    var data = sourcesData ;
+
+
+    if (dimSelected == "all") {
+        //reset all
+        updateDataTable(data);
+        $('#regionSelect').val('all');
+        mapClicked = false;
+        // remove country selection from map
+        generateDefaultDetailPane();
+
+    } else {
+        var filteredData = data.filter(function(d) {
+            var arr = d['dimension'].split(",");
+            var regArr = d['region'].split(",");
+            var trimedTagArr = arr.map(x => x.trim());
+            var trimedRegArr = regArr.map(x => x.trim());
+            regionSelected == 'all' ? trimedRegArr = "all" : null;
+            return ( trimedTagArr.includes(dimSelected) && trimedRegArr.includes(regionSelected)) ? d : null;
+        })
+        updateDataTable(filteredData);
+    }
+
+    $(this).toggleClass('active');
+
+}//clickButton
+
+// on select dropdown change
+$('#regionSelect').on('change',function(){
+    var tagsFilter = 'all';
+    var data = sourcesData;
+
+    if(!($('#all').hasClass('active'))){
+        for (var i = 0; i < buttocks.length; i++) {
+            if ($(buttocks[i]).hasClass('active')) {
+                tagsFilter = $(buttocks[i]).val();
+            }
+            
+        }
+    }
+    var regionSelected = $('#regionSelect').val();
+
+    if (regionSelected == "all") {
+        tagsFilter == 'all' ? updateDataTable() : $('.active').trigger('click');
+    } else {
+            var filter = data.filter(function(d) {
+            var arr = d['dimension'].split(",");
+            var regArr = d['region'].split(",");
+            var trimedTagArr = arr.map(x => x.trim());
+            var trimedRegArr = regArr.map(x => x.trim());
+            tagsFilter == 'all' ? trimedTagArr = "all" : null; //this for the condition to be always true
+            return (trimedRegArr.includes(regionSelected) && trimedTagArr.includes(tagsFilter) ) ? d : null;
+        });
+        updateDataTable(filter);
+    }
+    // $('#'+tagsFilter).toggleClass('active');
+});
+
+$("#exportTable").on("click", function() {
+    // datatable.button( '.buttons-excel' ).trigger();
+    $(".buttons-excel").trigger("click");
+});
+
+function getDataTableDataFromMap(country){
+    var dataByCountry = sourcesDataFiltered.filter(function(p) { 
+        var countries = p['countries'].split(",");
+        var trimedCountriesArr = countries.map(x => x.trim());
+        return trimedCountriesArr.includes(country) ; 
+    });
+    
+    // reinitiate dim et region select filters to default
+    return dataByCountry;
+} //getDataTableDataFromMap
+
+function getFilteredData(){
+    console.log("get filtered data running..")
+    var data = [];
+
+    return data;
+
+} //getFilteredData
+let lastCountryCharted = '';
+let dimensionChart,
+    countryData_,
+    xAxisArr = ['x'],
+    yAxisArr = ['dimension'],
+    collections = {};
+
+function generateDefaultDetailPane(){
+    $('.details > h6').text('global overwiew');
+    $('#globalStats').html('');
+    $('#globalStats')
+        .append(
+            '<div class="row">'+
+                '<div class="col-md-6 key-figure">'+
+                    '<div class="num" id="totalSources">'+sourcesData.length+'</div>'+
+                    '<h5>QUANTITATIVE studies</h5>'+
+                '</div>'+
+                    '<div class="col-md-6 key-figure">'+
+                    '<div class="num" id="date">'+countriesArr.length+'</div>'+
+                    '<h5># unique countries</h5>'+
+                '</div>'+
+            '</div>'
+
+        );
+    $('#overview').addClass('hidden');
+    $('#globalStats').removeClass('hidden');
+} // generateDefaultDetailPane
+
+function generateCountrytDetailPane(country){
+    if (lastCountryCharted != country) {
+        countryData_ = getDataTableDataFromMap(country);
+        lastCountryCharted = country;
+        for (let index = 0; index < dimensionsArr.length; index++) {
+            const element = dimensionsArr[index];
+            collections[element] = {"value": 0};
+            xAxisArr.push(element);
+            
+        }
+        countryData_.forEach(element => {
+            var dims = element['dimension'].split(",");
+            var trimedDimsArr = dims.map(x => x.trim());
+            trimedDimsArr.forEach(d => {
+                collections[d.trim()].value +=1;
+            });
+        });
+        var totalDim = 0;
+        for(k in collections){
+            totalDim += collections[k].value;
+        }
+        for (let index = 1; index < xAxisArr.length; index++) {
+            const element = xAxisArr[index];
+            yAxisArr[index] = collections[element].value;
+        }
+        
+    }
+    $('.details > h6').text(country+' overwiew');
+    $('#overview').html('');
+    $('#overview')
+        .append(
+            '<div class="col-md-6 key-figure">'+
+                '<span class="num" id="totalSources">'+countryData_.length+'</span>'+
+                '<span id="sourceLabel"> QUANTITATIVE studies</span>'+
+            '</div>'+
+            '<div class="row">'+
+                '<div id="dimChart">'+
+            '</div>'
+        );
+    
+    var chart = c3.generate({
+        bindto: '#dimChart',
+        size: { height: 150 },
+        data: {
+            x : 'x',
+            columns: [xAxisArr, yAxisArr],
+            type: 'bar'
+        },
+        bar: {
+            width: 25
+        },
+        color: {
+            pattern: ['#D90368']
+        },
+        axis: {
+            x: {
+                type: 'category',
+                tick: {
+                    outer: false,
+                    // multiline: false,
+                    fit: true
+                }
+            },
+            y: {
+                show: false
+                // max: 91,
+                // label: {
+                //     text: 'Percentage',
+                //     position: 'outer-center'
+                // },
+                // tick: {
+                //     outer: false,
+                //     format: d3.format('d'),
+                //     count: 4
+                // }
+              }
+        },
+        legend: {
+            show: false
+        },
+        tooltip: {
+            show: false
+          }
+    });
+    $('#globalStats').addClass('hidden');
+    $('#overview').removeClass('hidden');
+    
+} // generateCountrytDetailPane
+
+function generateOverviewclicked(country){
+    $('.details > h6').text('global overwiew');
+    generateCountrytDetailPane(country);
+}
+let geodataUrl = 'data/worldmap.json';
+let data_url = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRQDTIju76FYADX9ZKbKBD1JBA7eFLv86Y8ltOTs24eLqrf3FnKJENmtcUkP1HUMCQq7JL9hgwofz0q/pub?gid=1612863274&single=true&output=csv';
+
+let geomData,
+    sourcesData;
+
+
+$( document ).ready(function(){
+    function getData(){
+        Promise.all([
+            d3.json(geodataUrl),
+            d3.csv(data_url),
+        ]).then(function(data){
+            geomData = topojson.feature(data[0], data[0].objects.geom);
+            sourcesData = data[1];
+            sourcesDataFiltered = data[1];
+            // console.log(sourcesData)
+            sourcesData.forEach(element => {
+                var countries = element['countries'].split(",");
+                var dims = element['dimension'].split(",");
+                var regs = element['region'].split(",");
+
+                var trimedCountriesArr = countries.map(x => x.trim());
+                var trimedDimsArr = dims.map(x => x.trim());
+                var trimedRegArr = regs.map(x => x.trim());
+
+                var paysArr = [],
+                    dimsArr = [], 
+                    regsArr = [];
+            
+                for (let index = 0; index < trimedCountriesArr.length; index++) { //remove empty elements
+                    if (trimedCountriesArr[index]) {
+                        paysArr.push(trimedCountriesArr[index]);
+                    }
+                }
+                paysArr.forEach(d => {
+                    countriesArr.includes(d.trim()) ? '' : countriesArr.push(d.trim());
+                });
+                for (let index = 0; index < trimedDimsArr.length; index++) { //remove empty elements
+                    if (trimedDimsArr[index]) {
+                        dimsArr.push(trimedDimsArr[index]);
+                    }
+                }
+                dimsArr.forEach(d => {
+                    dimensionsArr.includes(d.trim()) ? '' : dimensionsArr.push(d.trim());
+                });
+                for (let index = 0; index < trimedRegArr.length; index++) { //remove empty elements
+                    if (trimedRegArr[index]) {
+                        regsArr.push(trimedRegArr[index]);
+                    }
+                }
+                regsArr.forEach(r => {
+                    regionsArr.includes(r.trim()) ? '' : regionsArr.push(r.trim());
+                });
+            });
+
+            generateRegionDropdown();
+            // init map global stats
+            initiateMap();
+            generateDataTable();
+            //remove loader and show vis
+            $('.loader').hide();
+            $('#main').css('opacity', 1);
+        }); // then
+    } // getData
+
+    getData();
+});
+
