@@ -62,7 +62,9 @@ function generateCountrytDetailPane(country){
                 '<span id="sourceLabel"> QUANTITATIVE studies</span>'+
             '</div>'+
             '<div class="row">'+
-                '<div id="dimChart">'+
+                '<div class="col-md-12">'+
+                    '<div id="dimChart">'+
+                '</div>'+
             '</div>'
         );
     

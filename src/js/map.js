@@ -3,6 +3,7 @@ let countriesArr = [];
 let g, mapsvg, projection, width, height, zoom, path;
 let currentZoom = 1;
 let mapClicked = false;
+let selectedCountryFromMap = "all";
 let countrySelectedFromMap = false;
 let mapFillColor = '#204669',//'#C2DACA',//'#2F9C67', 
     mapInactive = '#fff',//'#DBDEE6',//'#f1f1ee',//'#C2C4C6',
@@ -12,13 +13,13 @@ let mapFillColor = '#204669',//'#C2DACA',//'#2F9C67',
 function initiateMap() {
     width = $('#map').width();
     height = 500;
-    var mapScale = width/7.8;
+    var mapScale = width/10.6;
     var mapCenter = [25, 25];
 
     projection = d3.geoMercator()
         .center(mapCenter)
         .scale(mapScale)
-        .translate([width / 2, height / 1.9]);
+        .translate([width / 1.5, height / 1.9]);
 
     path = d3.geoPath().projection(projection);
 
@@ -103,11 +104,9 @@ function initiateMap() {
     })
     .on("click", function(d){
         mapClicked = true;
-        mapsvg.select('g').selectAll('.hasStudy').attr('fill', mapFillColor)
+        selectedCountryFromMap = d.properties.NAME ;
+        mapsvg.select('g').selectAll('.hasStudy').attr('fill', mapFillColor);
 
-        // if ( !$(this).hasClass('clicked')) {
-        //     $(this).attr('fill', hoverColor);
-        // }
         $(this).attr('fill', hoverColor);
         $(this).addClass('clicked');
         var countryData = getDataTableDataFromMap(d.properties.NAME);
@@ -116,6 +115,7 @@ function initiateMap() {
         generateOverviewclicked(d.properties.NAME);
         $('.btn').removeClass('active');
         $('#all').toggleClass('active');
+        $('#regionSelect').val('all');
         
     })
 
@@ -169,4 +169,11 @@ function choroplethMap(){
         });
     });
 
+}
+
+function resetMap(){
+    mapsvg.select('g').selectAll('.hasStudy').attr('fill', mapFillColor);
+    generateDefaultDetailPane();
+    mapClicked = false;
+    selectedCountryFromMap = "all";
 }

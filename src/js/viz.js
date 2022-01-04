@@ -58,6 +58,7 @@ $( document ).ready(function(){
             // init map global stats
             initiateMap();
             generateDataTable();
+            generateDefaultDetailPane();
             //remove loader and show vis
             $('.loader').hide();
             $('#main').css('opacity', 1);

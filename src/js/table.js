@@ -224,13 +224,22 @@ function clickButton(){
     var data = sourcesData ;
 
 
+    if(mapClicked){
+        console.log(selectedCountryFromMap)
+        data = data.filter(function(item){
+            var arr = item['countries'].split(",");
+            var trimedArr = arr.map(x => x.trim());
+            return trimedArr.includes(selectedCountryFromMap) ? item : null;
+        })
+    }
+
     if (dimSelected == "all") {
-        //reset all
+        //test map clicked ? 
+        mapClicked ? resetMap() : null;
         updateDataTable(data);
         $('#regionSelect').val('all');
-        mapClicked = false;
-        // remove country selection from map
-        generateDefaultDetailPane();
+        // mapClicked = false;
+        // generateDefaultDetailPane();
 
     } else {
         var filteredData = data.filter(function(d) {
@@ -262,6 +271,7 @@ $('#regionSelect').on('change',function(){
         }
     }
     var regionSelected = $('#regionSelect').val();
+    mapClicked ? resetMap() : null;
 
     if (regionSelected == "all") {
         tagsFilter == 'all' ? updateDataTable() : $('.active').trigger('click');
