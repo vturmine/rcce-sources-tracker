@@ -1091,6 +1091,8 @@ body {
   color: #fff;
   padding: 10px;
   width: 470px; }
+  .details p {
+    color: #000; }
   .details .label {
     fill: #fff; }
   .details h5 {
@@ -1214,18 +1216,19 @@ body {
     color: #fff; }
   .dimensionFilter .btn:focus,
   .dimensionFilter .btn:hover {
-    background: #204669; }
+    background: #9ec8ae; }
   .dimensionFilter .tag-all {
     background: #9d9fa2;
     border: solid 1px #9d9fa2; }
   .dimensionFilter .tag-main {
-    background: #9ec8ae;
-    border: solid 1px #9ec8ae; }
+    background: #2f9c67;
+    border: solid 1px #2f9c67; }
   .dimensionFilter .tag-other {
-    background: #798ba5;
-    border: solid 1px #798BA5; }
+    background: #204669;
+    border: solid 1px #204669; }
   .dimensionFilter .active {
-    background: #204669 !important; }
+    background: #9ec8ae !important;
+    border: solid 1px #9d9fa2; }
 
 #regionSelect {
   text-transform: uppercase;
@@ -1264,7 +1267,7 @@ body {
   margin-right: 5px;
   border: 0;
   border-radius: 0.5rem;
-  background: #9ec8ae; }
+  background: #2f9c67; }
 
 .tag-social-environment,
 .tag-structural-factor {

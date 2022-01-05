@@ -3,6 +3,7 @@
 let sourcesDataFiltered;
 let datatable;
 
+// let regionsArr = ['All regions', 'AP', 'ESAR', 'EURO', 'LAC', 'MENA', 'WCAR'];
 let regionsArr = ['All regions'];
 let dimensionsArr = [];
 
@@ -15,7 +16,7 @@ function slugify(texte){
 // 
 function generateRegionDropdown(){
     var options = "";
-
+    console.log(regionsArr)
     for (let index = 0; index < regionsArr.length; index++) {
         const element = regionsArr[index];
         index == 0 ? options += '<option value="all" selected>' + element + '</option>'  : 
@@ -39,6 +40,27 @@ function generateDimensionFilterSpan(){
     }
     $('.dimensionFilter').append(labels);
 }//generateDimensionFilterSpan
+
+function getColumnUniqueValues(){
+    var values = [];
+    for (let index = 0; index < arguments.length; index++) {
+        var arr = [];
+        values.push(arr);
+    }
+    sourcesData.forEach(element => {
+        for (let index = 0; index < arguments.length; index++) {
+            var arr = element[arguments[index]].split(",");
+            var returnArr = values[index];
+            var trimedArr = arr.map(x => x.trim());
+            trimedArr.forEach(d => {
+                returnArr.includes(d.trim()) ? '' : returnArr.push(d.trim());
+            });
+            values[index] = returnArr;
+        }
+    });
+
+    return values;
+}//getColumnUniqueValues
 
 
 // map js
@@ -97,11 +119,11 @@ function initiateMap() {
                 return d.properties.ISO_A3; 
             })
             .attr('class', function(d){
-              var className = (countriesArr.includes(d.properties.NAME)) ? 'hasStudy' : 'inactive';
+              var className = (countriesArr.includes(d.properties.ISO_A3)) ? 'hasStudy' : 'inactive';
               return className;
             })
             .attr('fill', function(d){
-              return countriesArr.includes(d.properties.NAME) ? mapFillColor : mapInactive ;
+              return countriesArr.includes(d.properties.ISO_A3) ? mapFillColor : mapInactive ;
             })
             .attr('stroke-width', .2)
             .attr('stroke', '#fff');
@@ -127,7 +149,7 @@ function initiateMap() {
             $(this).attr('fill', hoverColor);
         }
         if (!mapClicked) {
-            generateCountrytDetailPane(d.properties.NAME_LONG);
+            generateCountrytDetailPane(d.properties.ISO_A3, d.properties.NAME);
         }
         var mouse = d3.mouse(mapsvg.node()).map( function(d) { return parseInt(d); } );
         maptip
@@ -152,10 +174,10 @@ function initiateMap() {
 
         $(this).attr('fill', hoverColor);
         $(this).addClass('clicked');
-        var countryData = getDataTableDataFromMap(d.properties.NAME);
+        var countryData = getDataTableDataFromMap(d.properties.ISO_A3);
         
         updateDataTable(countryData);
-        generateOverviewclicked(d.properties.NAME);
+        generateOverviewclicked(d.properties.ISO_A3, d.properties.NAME);
         $('.btn').removeClass('active');
         $('#all').toggleClass('active');
         $('#regionSelect').val('all');
@@ -451,7 +473,6 @@ function clickButton(){
 
 
     if(mapClicked){
-        console.log(selectedCountryFromMap)
         data = data.filter(function(item){
             var arr = item['countries'].split(",");
             var trimedArr = arr.map(x => x.trim());
@@ -465,7 +486,7 @@ function clickButton(){
         updateDataTable(data);
         $('#regionSelect').val('all');
         // mapClicked = false;
-        // generateDefaultDetailPane();
+        generateDefaultDetailPane();
 
     } else {
         var filteredData = data.filter(function(d) {
@@ -477,6 +498,8 @@ function clickButton(){
             return ( trimedTagArr.includes(dimSelected) && trimedRegArr.includes(regionSelected)) ? d : null;
         })
         updateDataTable(filteredData);
+        // update panel charts
+        mapClicked ? null : generateDetailPaneFromDim(filteredData, dimSelected);
     }
 
     $(this).toggleClass('active');
@@ -501,6 +524,7 @@ $('#regionSelect').on('change',function(){
 
     if (regionSelected == "all") {
         tagsFilter == 'all' ? updateDataTable() : $('.active').trigger('click');
+        // reset panel 
     } else {
             var filter = data.filter(function(d) {
             var arr = d['dimension'].split(",");
@@ -511,6 +535,7 @@ $('#regionSelect').on('change',function(){
             return (trimedRegArr.includes(regionSelected) && trimedTagArr.includes(tagsFilter) ) ? d : null;
         });
         updateDataTable(filter);
+        generatePaneFromRegion(filter, regionSelected);
     }
     // $('#'+tagsFilter).toggleClass('active');
 });
@@ -522,7 +547,7 @@ $("#exportTable").on("click", function() {
 
 function getDataTableDataFromMap(country){
     var dataByCountry = sourcesDataFiltered.filter(function(p) { 
-        var countries = p['countries'].split(",");
+        var countries = p['iso3'].split(",");
         var trimedCountriesArr = countries.map(x => x.trim());
         return trimedCountriesArr.includes(country) ; 
     });
@@ -557,7 +582,7 @@ function generateDefaultDetailPane(){
                 '</div>'+
                     '<div class="col-md-6 key-figure">'+
                     '<div class="num" id="date">'+countriesArr.length+'</div>'+
-                    '<h5># unique countries</h5>'+
+                    '<h5># countries and territories</h5>'+
                 '</div>'+
             '</div>'
 
@@ -566,20 +591,74 @@ function generateDefaultDetailPane(){
     $('#globalStats').removeClass('hidden');
 } // generateDefaultDetailPane
 
-function generateCountrytDetailPane(country){
-    if (lastCountryCharted != country) {
+function generateDetailPaneFromDim(data, dimension){
+    var countriesDim = [];
+    data.forEach(element => {
+        var arr = element['iso3'].split(",");
+        var trimedArr = arr.map(x => x.trim());
+        trimedArr.forEach(d => {
+            countriesDim.includes(d.trim()) ? '' : countriesDim.push(d.trim());
+        });
+    });
+    $('.details > h6').text(dimension +' dimension overwiew');
+    $('#globalStats').html('');
+    $('#globalStats')
+        .append(
+            '<div class="row">'+
+                '<div class="col-md-6 key-figure">'+
+                    '<div class="num" id="totalSources">'+data.length+'</div>'+
+                    '<h5>QUANTITATIVE studies</h5>'+
+                '</div>'+
+                    '<div class="col-md-6 key-figure">'+
+                    '<div class="num" id="date">'+countriesDim.length+'</div>'+
+                    '<h5># countries and territories</h5>'+
+                '</div>'+
+            '</div>'
+
+        );
+    $('#overview').addClass('hidden');
+    $('#globalStats').removeClass('hidden');
+} //generateDetailPane
+
+function generatePaneFromRegion(data, region){
+    countryData_ = data;
+    for (let index = 0; index < dimensionsArr.length; index++) {
+        const element = dimensionsArr[index];
+        collections[element] = {"value": 0};
+        xAxisArr.push(element);
+    }
+    countryData_.forEach(element => {
+        var dims = element['dimension'].split(",");
+        var trimedDimsArr = dims.map(x => x.trim());
+        trimedDimsArr.forEach(d => {
+            collections[d.trim()].value +=1;
+        });
+    });
+    var totalDim = 0;
+    for(k in collections){
+        totalDim += collections[k].value;
+    }
+    for (let index = 1; index < xAxisArr.length; index++) {
+        const element = xAxisArr[index];
+        yAxisArr[index] = collections[element].value;
+    }
+    drawPanelChart(region);
+} //generatePaneFromRegion 
+
+function generateCountrytDetailPane(country, name){
+    if (lastCountryCharted != name) {
         countryData_ = getDataTableDataFromMap(country);
-        lastCountryCharted = country;
+        lastCountryCharted = name;
         for (let index = 0; index < dimensionsArr.length; index++) {
             const element = dimensionsArr[index];
             collections[element] = {"value": 0};
             xAxisArr.push(element);
-            
         }
         countryData_.forEach(element => {
             var dims = element['dimension'].split(",");
             var trimedDimsArr = dims.map(x => x.trim());
             trimedDimsArr.forEach(d => {
+                // d.trim() != "" ? collections[d.trim()].value +=1 : null;
                 collections[d.trim()].value +=1;
             });
         });
@@ -593,7 +672,17 @@ function generateCountrytDetailPane(country){
         }
         
     }
-    $('.details > h6').text(country+' overwiew');
+    
+    drawPanelChart(name);
+} // generateCountrytDetailPane
+
+function generateOverviewclicked(country, name){
+    $('.details > h6').text('global overwiew');
+    generateCountrytDetailPane(country, name);
+}
+
+function drawPanelChart(name){
+    $('.details > h6').text(name+' overwiew');
     $('#overview').html('');
     $('#overview')
         .append(
@@ -625,24 +714,21 @@ function generateCountrytDetailPane(country){
         axis: {
             x: {
                 type: 'category',
+                // height: 100,
                 tick: {
                     outer: false,
-                    // multiline: false,
-                    fit: true
+                    fit: true,
+                    rotate: -35,
+                    multiline: false
                 }
             },
             y: {
-                show: false
-                // max: 91,
-                // label: {
-                //     text: 'Percentage',
-                //     position: 'outer-center'
-                // },
-                // tick: {
-                //     outer: false,
-                //     format: d3.format('d'),
-                //     count: 4
-                // }
+                // show: false,
+                tick: {
+                    outer: false,
+                    format: d3.format('d'),
+                    count: 3
+                }
               }
         },
         legend: {
@@ -654,13 +740,7 @@ function generateCountrytDetailPane(country){
     });
     $('#globalStats').addClass('hidden');
     $('#overview').removeClass('hidden');
-    
-} // generateCountrytDetailPane
-
-function generateOverviewclicked(country){
-    $('.details > h6').text('global overwiew');
-    generateCountrytDetailPane(country);
-}
+}//drawPanelChart
 let geodataUrl = 'data/worldmap.json';
 let data_url = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRQDTIju76FYADX9ZKbKBD1JBA7eFLv86Y8ltOTs24eLqrf3FnKJENmtcUkP1HUMCQq7JL9hgwofz0q/pub?gid=1612863274&single=true&output=csv';
 
@@ -676,47 +756,18 @@ $( document ).ready(function(){
         ]).then(function(data){
             geomData = topojson.feature(data[0], data[0].objects.geom);
             sourcesData = data[1];
+            // sourcesData.forEach(element => {
+            //     var date = new Date(element['source_date']);
+                
+            //     element['source_date'] = date;
+            // });
             sourcesDataFiltered = data[1];
             // console.log(sourcesData)
-            sourcesData.forEach(element => {
-                var countries = element['countries'].split(",");
-                var dims = element['dimension'].split(",");
-                var regs = element['region'].split(",");
-
-                var trimedCountriesArr = countries.map(x => x.trim());
-                var trimedDimsArr = dims.map(x => x.trim());
-                var trimedRegArr = regs.map(x => x.trim());
-
-                var paysArr = [],
-                    dimsArr = [], 
-                    regsArr = [];
-            
-                for (let index = 0; index < trimedCountriesArr.length; index++) { //remove empty elements
-                    if (trimedCountriesArr[index]) {
-                        paysArr.push(trimedCountriesArr[index]);
-                    }
-                }
-                paysArr.forEach(d => {
-                    countriesArr.includes(d.trim()) ? '' : countriesArr.push(d.trim());
-                });
-                for (let index = 0; index < trimedDimsArr.length; index++) { //remove empty elements
-                    if (trimedDimsArr[index]) {
-                        dimsArr.push(trimedDimsArr[index]);
-                    }
-                }
-                dimsArr.forEach(d => {
-                    dimensionsArr.includes(d.trim()) ? '' : dimensionsArr.push(d.trim());
-                });
-                for (let index = 0; index < trimedRegArr.length; index++) { //remove empty elements
-                    if (trimedRegArr[index]) {
-                        regsArr.push(trimedRegArr[index]);
-                    }
-                }
-                regsArr.forEach(r => {
-                    regionsArr.includes(r.trim()) ? '' : regionsArr.push(r.trim());
-                });
-            });
-
+            var arrs = getColumnUniqueValues("iso3", "dimension", "region");
+            countriesArr = arrs[0],
+            dimensionsArr = arrs[1],
+            regionsArr.push(...arrs[2]);
+     
             generateRegionDropdown();
             // init map global stats
             initiateMap();
