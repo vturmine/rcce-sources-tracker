@@ -686,9 +686,11 @@ function drawPanelChart(name){
     $('#overview').html('');
     $('#overview')
         .append(
-            '<div class="col-md-6 key-figure">'+
-                '<span class="num" id="totalSources">'+countryData_.length+'</span>'+
-                '<span id="sourceLabel"> QUANTITATIVE studies</span>'+
+            '<div class="row">'+
+                '<div class="col-md-12 key-figure">'+
+                    '<span class="num" id="totalSources">'+countryData_.length+'</span>'+
+                    '<span id="sourceLabel"> QUANTITATIVE studies</span>'+
+                '</div>'+
             '</div>'+
             '<div class="row">'+
                 '<div class="col-md-12">'+
