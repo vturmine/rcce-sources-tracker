@@ -300,19 +300,23 @@ function generateDataTable(){
         "order":[[1, 'asc']],
         "dom": "Blrtp",
         "buttons": {
-            // "dom":{
-            //     "button":{
-            //         "tag": "button",
-            //         "className": "exportData"
-            //     }
-            // },
             "buttons": [
                 {
                     extend: 'excelHtml5',
-                    // text: "Download data",
                     "className": "exportData",
                     exportOptions:{
-                        columns: ':visible'
+                        // columns: ':visible',
+                        rows: ':visible',
+                        format:{
+                            header: function(data, columnIdx){
+                                var hd = ['details', 'authors', 'countries', 'variables', 'source_comment','methodology','target_pop','sample_type','quality_check'];
+                                if(columnIdx >= 7){
+                                    return hd[columnIdx-7];
+                                }else {
+                                    return data;
+                                }
+                            }
+                        }
                     }
                 }
             ]
