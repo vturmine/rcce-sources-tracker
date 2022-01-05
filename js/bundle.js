@@ -525,6 +525,7 @@ $('#regionSelect').on('change',function(){
     if (regionSelected == "all") {
         tagsFilter == 'all' ? updateDataTable() : $('.active').trigger('click');
         // reset panel 
+        resetMap();
     } else {
             var filter = data.filter(function(d) {
             var arr = d['dimension'].split(",");
