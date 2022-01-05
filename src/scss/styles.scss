@@ -28,6 +28,9 @@ body {
   // line-height: 1.7;
   padding: 10px;
   width: 470px;
+  p {
+    color: #000;
+  }
   .label {
     fill: #fff;
   }
@@ -172,29 +175,29 @@ body {
     padding: 5px 8px 5px 8px;
     font-size: 0.78rem;
     line-height: 1.5;
-
     color: #fff;
   }
 
   .btn:focus,
   .btn:hover {
     // .btn:active {
-    background: #204669;
+    background: #9ec8ae;
   }
   .tag-all {
     background: #9d9fa2;
     border: solid 1px #9d9fa2;
   }
   .tag-main {
-    background: #9ec8ae;
-    border: solid 1px #9ec8ae;
+    background: #2f9c67; //#9ec8ae;
+    border: solid 1px #2f9c67; //#9ec8ae;
   }
   .tag-other {
-    background: #798ba5;
-    border: solid 1px#798BA5;
+    background: #204669; //#798ba5;
+    border: solid 1px #204669; //#798BA5;
   }
   .active {
-    background: #204669 !important;
+    background: #9ec8ae !important; //#204669
+    border: solid 1px #9d9fa2;
   }
 }
 
@@ -239,7 +242,7 @@ body {
   margin-right: 5px;
   border: 0;
   border-radius: 0.5rem;
-  background: #9ec8ae;
+  background: #2f9c67;
 }
 
 .tag-social-environment,

@@ -2,6 +2,7 @@
 let sourcesDataFiltered;
 let datatable;
 
+// let regionsArr = ['All regions', 'AP', 'ESAR', 'EURO', 'LAC', 'MENA', 'WCAR'];
 let regionsArr = ['All regions'];
 let dimensionsArr = [];
 
@@ -14,7 +15,7 @@ function slugify(texte){
 // 
 function generateRegionDropdown(){
     var options = "";
-
+    console.log(regionsArr)
     for (let index = 0; index < regionsArr.length; index++) {
         const element = regionsArr[index];
         index == 0 ? options += '<option value="all" selected>' + element + '</option>'  : 
@@ -38,4 +39,25 @@ function generateDimensionFilterSpan(){
     }
     $('.dimensionFilter').append(labels);
 }//generateDimensionFilterSpan
+
+function getColumnUniqueValues(){
+    var values = [];
+    for (let index = 0; index < arguments.length; index++) {
+        var arr = [];
+        values.push(arr);
+    }
+    sourcesData.forEach(element => {
+        for (let index = 0; index < arguments.length; index++) {
+            var arr = element[arguments[index]].split(",");
+            var returnArr = values[index];
+            var trimedArr = arr.map(x => x.trim());
+            trimedArr.forEach(d => {
+                returnArr.includes(d.trim()) ? '' : returnArr.push(d.trim());
+            });
+            values[index] = returnArr;
+        }
+    });
+
+    return values;
+}//getColumnUniqueValues
 

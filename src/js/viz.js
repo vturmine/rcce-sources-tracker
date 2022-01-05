@@ -13,47 +13,18 @@ $( document ).ready(function(){
         ]).then(function(data){
             geomData = topojson.feature(data[0], data[0].objects.geom);
             sourcesData = data[1];
+            // sourcesData.forEach(element => {
+            //     var date = new Date(element['source_date']);
+                
+            //     element['source_date'] = date;
+            // });
             sourcesDataFiltered = data[1];
             // console.log(sourcesData)
-            sourcesData.forEach(element => {
-                var countries = element['countries'].split(",");
-                var dims = element['dimension'].split(",");
-                var regs = element['region'].split(",");
-
-                var trimedCountriesArr = countries.map(x => x.trim());
-                var trimedDimsArr = dims.map(x => x.trim());
-                var trimedRegArr = regs.map(x => x.trim());
-
-                var paysArr = [],
-                    dimsArr = [], 
-                    regsArr = [];
-            
-                for (let index = 0; index < trimedCountriesArr.length; index++) { //remove empty elements
-                    if (trimedCountriesArr[index]) {
-                        paysArr.push(trimedCountriesArr[index]);
-                    }
-                }
-                paysArr.forEach(d => {
-                    countriesArr.includes(d.trim()) ? '' : countriesArr.push(d.trim());
-                });
-                for (let index = 0; index < trimedDimsArr.length; index++) { //remove empty elements
-                    if (trimedDimsArr[index]) {
-                        dimsArr.push(trimedDimsArr[index]);
-                    }
-                }
-                dimsArr.forEach(d => {
-                    dimensionsArr.includes(d.trim()) ? '' : dimensionsArr.push(d.trim());
-                });
-                for (let index = 0; index < trimedRegArr.length; index++) { //remove empty elements
-                    if (trimedRegArr[index]) {
-                        regsArr.push(trimedRegArr[index]);
-                    }
-                }
-                regsArr.forEach(r => {
-                    regionsArr.includes(r.trim()) ? '' : regionsArr.push(r.trim());
-                });
-            });
-
+            var arrs = getColumnUniqueValues("iso3", "dimension", "region");
+            countriesArr = arrs[0],
+            dimensionsArr = arrs[1],
+            regionsArr.push(...arrs[2]);
+     
             generateRegionDropdown();
             // init map global stats
             initiateMap();

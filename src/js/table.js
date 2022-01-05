@@ -229,7 +229,6 @@ function clickButton(){
 
 
     if(mapClicked){
-        console.log(selectedCountryFromMap)
         data = data.filter(function(item){
             var arr = item['countries'].split(",");
             var trimedArr = arr.map(x => x.trim());
@@ -243,7 +242,7 @@ function clickButton(){
         updateDataTable(data);
         $('#regionSelect').val('all');
         // mapClicked = false;
-        // generateDefaultDetailPane();
+        generateDefaultDetailPane();
 
     } else {
         var filteredData = data.filter(function(d) {
@@ -255,6 +254,8 @@ function clickButton(){
             return ( trimedTagArr.includes(dimSelected) && trimedRegArr.includes(regionSelected)) ? d : null;
         })
         updateDataTable(filteredData);
+        // update panel charts
+        mapClicked ? null : generateDetailPaneFromDim(filteredData, dimSelected);
     }
 
     $(this).toggleClass('active');
@@ -279,6 +280,7 @@ $('#regionSelect').on('change',function(){
 
     if (regionSelected == "all") {
         tagsFilter == 'all' ? updateDataTable() : $('.active').trigger('click');
+        // reset panel 
     } else {
             var filter = data.filter(function(d) {
             var arr = d['dimension'].split(",");
@@ -289,6 +291,7 @@ $('#regionSelect').on('change',function(){
             return (trimedRegArr.includes(regionSelected) && trimedTagArr.includes(tagsFilter) ) ? d : null;
         });
         updateDataTable(filter);
+        generatePaneFromRegion(filter, regionSelected);
     }
     // $('#'+tagsFilter).toggleClass('active');
 });
@@ -300,7 +303,7 @@ $("#exportTable").on("click", function() {
 
 function getDataTableDataFromMap(country){
     var dataByCountry = sourcesDataFiltered.filter(function(p) { 
-        var countries = p['countries'].split(",");
+        var countries = p['iso3'].split(",");
         var trimedCountriesArr = countries.map(x => x.trim());
         return trimedCountriesArr.includes(country) ; 
     });

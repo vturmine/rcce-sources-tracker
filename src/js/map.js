@@ -54,11 +54,11 @@ function initiateMap() {
                 return d.properties.ISO_A3; 
             })
             .attr('class', function(d){
-              var className = (countriesArr.includes(d.properties.NAME)) ? 'hasStudy' : 'inactive';
+              var className = (countriesArr.includes(d.properties.ISO_A3)) ? 'hasStudy' : 'inactive';
               return className;
             })
             .attr('fill', function(d){
-              return countriesArr.includes(d.properties.NAME) ? mapFillColor : mapInactive ;
+              return countriesArr.includes(d.properties.ISO_A3) ? mapFillColor : mapInactive ;
             })
             .attr('stroke-width', .2)
             .attr('stroke', '#fff');
@@ -84,7 +84,7 @@ function initiateMap() {
             $(this).attr('fill', hoverColor);
         }
         if (!mapClicked) {
-            generateCountrytDetailPane(d.properties.NAME_LONG);
+            generateCountrytDetailPane(d.properties.ISO_A3, d.properties.NAME);
         }
         var mouse = d3.mouse(mapsvg.node()).map( function(d) { return parseInt(d); } );
         maptip
@@ -109,10 +109,10 @@ function initiateMap() {
 
         $(this).attr('fill', hoverColor);
         $(this).addClass('clicked');
-        var countryData = getDataTableDataFromMap(d.properties.NAME);
+        var countryData = getDataTableDataFromMap(d.properties.ISO_A3);
         
         updateDataTable(countryData);
-        generateOverviewclicked(d.properties.NAME);
+        generateOverviewclicked(d.properties.ISO_A3, d.properties.NAME);
         $('.btn').removeClass('active');
         $('#all').toggleClass('active');
         $('#regionSelect').val('all');
