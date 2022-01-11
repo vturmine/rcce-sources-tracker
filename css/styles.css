@@ -1103,7 +1103,8 @@ body {
     text-transform: uppercase;
     font-weight: 600;
     font-size: 0.81rem;
-    line-height: 1.7; }
+    line-height: 1.7;
+    color: #d90368; }
   .details .key-figure {
     padding-bottom: 10px; }
     .details .key-figure h5,

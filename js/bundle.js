@@ -16,7 +16,6 @@ function slugify(texte){
 // 
 function generateRegionDropdown(){
     var options = "";
-    console.log(regionsArr)
     for (let index = 0; index < regionsArr.length; index++) {
         const element = regionsArr[index];
         index == 0 ? options += '<option value="all" selected>' + element + '</option>'  : 
@@ -74,7 +73,8 @@ let mapFillColor = '#204669',//'#C2DACA',//'#2F9C67',
     mapInactive = '#fff',//'#DBDEE6',//'#f1f1ee',//'#C2C4C6',
     mapActive = '#2F9C67',
     hoverColor = '#2F9C67';//'#78B794';
-
+let countryIso3Code = 'ISO_A3',
+    countryGeoName = 'NAME';
 function initiateMap() {
     width = $('#map').width();
     height = 500;
@@ -116,7 +116,7 @@ function initiateMap() {
             .append("path")
             .attr('d',path)
             .attr('id', function(d){ 
-                return d.properties.ISO_A3; 
+                return d.properties.countryIso3Code; 
             })
             .attr('class', function(d){
               var className = (countriesArr.includes(d.properties.ISO_A3)) ? 'hasStudy' : 'inactive';
@@ -155,7 +155,7 @@ function initiateMap() {
         maptip
             .classed('hidden', false)
             .attr('style', 'left:'+(mouse[0])+'px; top:'+(mouse[1]+25)+'px')
-            .html(d.properties.NAME_LONG);
+            .html(d.properties.NAME);
         
     })
     .on("mouseout", function(d) { 
@@ -175,7 +175,6 @@ function initiateMap() {
         $(this).attr('fill', hoverColor);
         $(this).addClass('clicked');
         var countryData = getDataTableDataFromMap(d.properties.ISO_A3);
-        
         updateDataTable(countryData);
         generateOverviewclicked(d.properties.ISO_A3, d.properties.NAME);
         $('.btn').removeClass('active');
@@ -319,7 +318,7 @@ function generateDataTable(){
         "pageLength": 20,
         "bLengthChange": false,
         "pagingType": "simple_numbers",
-        "order":[[1, 'asc']],
+        "order":[[0, 'asc']],
         "dom": "Blrtp",
         "buttons": {
             "buttons": [
@@ -745,7 +744,8 @@ function drawPanelChart(name){
     $('#overview').removeClass('hidden');
 }//drawPanelChart
 let geodataUrl = 'data/worldmap.json';
-let data_url = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRQDTIju76FYADX9ZKbKBD1JBA7eFLv86Y8ltOTs24eLqrf3FnKJENmtcUkP1HUMCQq7JL9hgwofz0q/pub?gid=1612863274&single=true&output=csv';
+let data_url = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQwVG8xzJogJgeBzk5-mLaA7BOGWhwU_Z6iGrnGQwPT2OAInzFYX-5hNYh2aFyqn0sVh0PpFikSJuEq/pub?gid=1612863274&single=true&output=csv';
+// 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRQDTIju76FYADX9ZKbKBD1JBA7eFLv86Y8ltOTs24eLqrf3FnKJENmtcUkP1HUMCQq7JL9hgwofz0q/pub?gid=1612863274&single=true&output=csv';
 
 let geomData,
     sourcesData;
@@ -759,18 +759,12 @@ $( document ).ready(function(){
         ]).then(function(data){
             geomData = topojson.feature(data[0], data[0].objects.geom);
             sourcesData = data[1];
-            // sourcesData.forEach(element => {
-            //     var date = new Date(element['source_date']);
-                
-            //     element['source_date'] = date;
-            // });
+
             sourcesDataFiltered = data[1];
-            // console.log(sourcesData)
             var arrs = getColumnUniqueValues("iso3", "dimension", "region");
             countriesArr = arrs[0],
             dimensionsArr = arrs[1],
             regionsArr.push(...arrs[2]);
-     
             generateRegionDropdown();
             // init map global stats
             initiateMap();
