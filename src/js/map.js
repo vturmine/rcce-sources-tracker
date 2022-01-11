@@ -9,7 +9,8 @@ let mapFillColor = '#204669',//'#C2DACA',//'#2F9C67',
     mapInactive = '#fff',//'#DBDEE6',//'#f1f1ee',//'#C2C4C6',
     mapActive = '#2F9C67',
     hoverColor = '#2F9C67';//'#78B794';
-
+let countryIso3Code = 'ISO_A3',
+    countryGeoName = 'NAME';
 function initiateMap() {
     width = $('#map').width();
     height = 500;
@@ -51,7 +52,7 @@ function initiateMap() {
             .append("path")
             .attr('d',path)
             .attr('id', function(d){ 
-                return d.properties.ISO_A3; 
+                return d.properties.countryIso3Code; 
             })
             .attr('class', function(d){
               var className = (countriesArr.includes(d.properties.ISO_A3)) ? 'hasStudy' : 'inactive';
@@ -90,7 +91,7 @@ function initiateMap() {
         maptip
             .classed('hidden', false)
             .attr('style', 'left:'+(mouse[0])+'px; top:'+(mouse[1]+25)+'px')
-            .html(d.properties.NAME_LONG);
+            .html(d.properties.NAME);
         
     })
     .on("mouseout", function(d) { 
@@ -110,7 +111,6 @@ function initiateMap() {
         $(this).attr('fill', hoverColor);
         $(this).addClass('clicked');
         var countryData = getDataTableDataFromMap(d.properties.ISO_A3);
-        
         updateDataTable(countryData);
         generateOverviewclicked(d.properties.ISO_A3, d.properties.NAME);
         $('.btn').removeClass('active');

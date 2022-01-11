@@ -15,7 +15,6 @@ function slugify(texte){
 // 
 function generateRegionDropdown(){
     var options = "";
-    console.log(regionsArr)
     for (let index = 0; index < regionsArr.length; index++) {
         const element = regionsArr[index];
         index == 0 ? options += '<option value="all" selected>' + element + '</option>'  : 

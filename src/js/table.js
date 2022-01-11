@@ -75,7 +75,7 @@ function generateDataTable(){
         "pageLength": 20,
         "bLengthChange": false,
         "pagingType": "simple_numbers",
-        "order":[[1, 'asc']],
+        "order":[[0, 'asc']],
         "dom": "Blrtp",
         "buttons": {
             "buttons": [
