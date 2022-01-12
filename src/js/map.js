@@ -1,6 +1,7 @@
 // map js
 let countriesArr = [];
 let g, mapsvg, projection, width, height, zoom, path;
+let viewportWidth = window.innerWidth;
 let currentZoom = 1;
 let mapClicked = false;
 let selectedCountryFromMap = "all";
@@ -12,7 +13,7 @@ let mapFillColor = '#204669',//'#C2DACA',//'#2F9C67',
 let countryIso3Code = 'ISO_A3',
     countryGeoName = 'NAME';
 function initiateMap() {
-    width = $('#map').width();
+    width = viewportWidth;
     height = 500;
     var mapScale = width/10.6;
     var mapCenter = [25, 25];
