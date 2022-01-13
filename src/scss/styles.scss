@@ -21,47 +21,55 @@ body {
 }
 
 .details {
-  // background-color: rgba(61, 61, 63, 0.5);
+  font-family: "Montserrat", Helvetica, Arial, Lucida, sans-serif;
   background-color: rgba(156, 158, 165, 0.7);
   color: #fff;
-  // font-size: 0.85rem;
-  // line-height: 1.7;
   padding: 10px;
   width: 470px;
   p {
+    font-family: "open sans";
+    font-size: 14px;
     color: #000;
+    text-align: justify;
+    padding-bottom: 15px;
   }
   .label {
     fill: #fff;
   }
   h5 {
-    font-weight: 700;
-    font-size: 0.9rem;
-    line-height: 1.7;
+    font-weight: bold;
+    font-style: normal;
+    font-size: 26px;
+    // font-family: "Montserrat", Helvetica, Arial, Lucida, sans-serif;
+    line-height: 1em;
   }
+  #divider {
+    width: 30px;
+    hr {
+      border-top: 4px solid #2f9c67;
+    }
+  }
+
   h6 {
     text-transform: uppercase;
-    font-weight: 600;
-    font-size: 0.81rem;
-    line-height: 1.7;
+    font-size: 17px;
     color: #d90368;
   }
   .key-figure {
     padding-bottom: 10px;
     h5,
     #sourceLabel {
-      font-family: "Source Sans Pro", sans-serif;
+      // font-family: "Source Sans Pro", sans-serif;
+      font-weight: normal;
       font-size: 0.8rem;
       line-height: 1;
       color: #000;
       text-transform: uppercase;
-      // font-weight: normal;
     }
     .num {
-      font-family: "Source Sans Pro", sans-serif;
+      // font-family: "Source Sans Pro", sans-serif;
       font-size: 2rem;
       line-height: 1;
-      font-weight: bold;
       min-height: 40px;
       color: #204669;
     }
@@ -274,6 +282,9 @@ table.tabDetail tbody tr {
   color: #2f9c67;
   font-size: 1rem;
   line-height: 1.5;
+}
+.fa-external-link {
+  color: #204669;
 }
 
 .dt-buttons {

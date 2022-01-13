@@ -72,7 +72,7 @@ function generateDataTable(){
             { "searchable" : true, "targets": "_all"},
             {"type": "myDate","targets": 4}
         ],
-        "pageLength": 20,
+        "pageLength": 10,
         "bLengthChange": false,
         "pagingType": "simple_numbers",
         "order":[[0, 'asc']],
