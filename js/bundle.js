@@ -316,7 +316,7 @@ function generateDataTable(){
             { "searchable" : true, "targets": "_all"},
             {"type": "myDate","targets": 4}
         ],
-        "pageLength": 10,
+        "pageLength": 20,
         "bLengthChange": false,
         "pagingType": "simple_numbers",
         "order":[[0, 'asc']],
@@ -766,7 +766,6 @@ $( document ).ready(function(){
             countriesArr = arrs[0],
             dimensionsArr = arrs[1],
             regionsArr.push(...arrs[2]);
-            console.log(geomData)
             generateRegionDropdown();
             // init map global stats
             initiateMap();
