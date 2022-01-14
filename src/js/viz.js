@@ -20,7 +20,6 @@ $( document ).ready(function(){
             countriesArr = arrs[0],
             dimensionsArr = arrs[1],
             regionsArr.push(...arrs[2]);
-            console.log(geomData)
             generateRegionDropdown();
             // init map global stats
             initiateMap();
