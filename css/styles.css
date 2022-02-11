@@ -1222,7 +1222,9 @@ body {
 
 #searchBox {
   min-width: 250px;
-  padding-right: 20px; }
+  padding-right: 20px; 
+  font-size: 0.85rem;
+}
 
 .dimensionFilter {
   padding: 0 20px 0 20px; }
